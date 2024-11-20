@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-app
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=development
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    # Optional healthcheck
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - db
+
+  # Optionally, you might want to add a database service
+  # Here's an example with PostgreSQL:
+  db:
+    image: postgres:15-alpine
+    container_name: go-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=sendpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data: 
