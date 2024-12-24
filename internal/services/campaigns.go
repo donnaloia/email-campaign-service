@@ -15,7 +15,7 @@ func NewCampaignService(db *sql.DB) *CampaignService {
 	return &CampaignService{db: db}
 }
 
-func (s *CampaignService) GetAll(params models.PaginationParams) (*models.PaginatedResponse[models.Campaign], error) {
+func (s *CampaignService) GetAll(organizationID string, params models.PaginationParams) (*models.PaginatedResponse[models.Campaign], error) {
 	if params.Page < 1 {
 		params.Page = 1
 	}
@@ -24,18 +24,22 @@ func (s *CampaignService) GetAll(params models.PaginationParams) (*models.Pagina
 	}
 
 	var total int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM campaigns").Scan(&total)
+	err := s.db.QueryRow(
+		"SELECT COUNT(*) FROM campaigns WHERE organization_id = $1",
+		organizationID,
+	).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("error counting campaigns: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.PageSize
 	rows, err := s.db.Query(
-		`SELECT id, name, created_at 
+		`SELECT id, name, organization_id, created_at 
 		FROM campaigns 
+		WHERE organization_id = $1
 		ORDER BY created_at DESC 
-		LIMIT $1 OFFSET $2`,
-		params.PageSize, offset,
+		LIMIT $2 OFFSET $3`,
+		organizationID, params.PageSize, offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching campaigns: %w", err)
@@ -48,6 +52,7 @@ func (s *CampaignService) GetAll(params models.PaginationParams) (*models.Pagina
 		if err := rows.Scan(
 			&campaign.ID,
 			&campaign.Name,
+			&campaign.OrganizationID,
 			&campaign.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning campaign: %w", err)
@@ -58,15 +63,17 @@ func (s *CampaignService) GetAll(params models.PaginationParams) (*models.Pagina
 	return models.NewPaginatedResponse(campaigns, total, params.Page, params.PageSize), nil
 }
 
-func (s *CampaignService) GetByID(id string) (*models.Campaign, error) {
+func (s *CampaignService) GetByID(organizationID string, id string) (*models.Campaign, error) {
 	var campaign models.Campaign
 	err := s.db.QueryRow(
-		`SELECT id, name, created_at 
-		FROM campaigns WHERE id = $1`,
-		id,
+		`SELECT id, name, organization_id, created_at 
+		FROM campaigns 
+		WHERE id = $1 AND organization_id = $2`,
+		id, organizationID,
 	).Scan(
 		&campaign.ID,
 		&campaign.Name,
+		&campaign.OrganizationID,
 		&campaign.CreatedAt,
 	)
 	if err == sql.ErrNoRows {
@@ -78,16 +85,17 @@ func (s *CampaignService) GetByID(id string) (*models.Campaign, error) {
 	return &campaign, nil
 }
 
-func (s *CampaignService) Create(req *models.CreateCampaignRequest) (*models.Campaign, error) {
+func (s *CampaignService) Create(organizationID string, req *models.CreateCampaign) (*models.Campaign, error) {
 	var campaign models.Campaign
 	err := s.db.QueryRow(
-		`INSERT INTO campaigns (name) 
-		VALUES ($1) 
-		RETURNING id, name,  created_at`,
-		req.Name, "draft",
+		`INSERT INTO campaigns (name, organization_id) 
+		VALUES ($1, $2) 
+		RETURNING id, name, organization_id, created_at`,
+		req.Name, organizationID,
 	).Scan(
 		&campaign.ID,
 		&campaign.Name,
+		&campaign.OrganizationID,
 		&campaign.CreatedAt,
 	)
 	if err != nil {

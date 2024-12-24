@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS organizations (
 CREATE TABLE IF NOT EXISTS email_addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     address VARCHAR(255) NOT NULL UNIQUE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS email_addresses (
 CREATE TABLE IF NOT EXISTS email_groups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -35,6 +37,7 @@ CREATE TABLE IF NOT EXISTS email_group_members (
 CREATE TABLE IF NOT EXISTS campaigns (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -47,6 +50,15 @@ CREATE TABLE IF NOT EXISTS email_group_campaigns (
     UNIQUE(email_group_id, campaign_id)
 );
 
+-- Templates table
+CREATE TABLE IF NOT EXISTS templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    html TEXT NOT NULL,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Add indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_email_addresses_address ON email_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_email_groups_name ON email_groups(name);
@@ -54,14 +66,18 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_name ON campaigns(name);
 CREATE INDEX IF NOT EXISTS idx_email_group_members_email_group_id ON email_group_members(email_group_id);
 CREATE INDEX IF NOT EXISTS idx_email_group_members_email_address_id ON email_group_members(email_address_id);
 CREATE INDEX IF NOT EXISTS idx_email_group_campaigns_email_group_id ON email_group_campaigns(email_group_id);
-CREATE INDEX IF NOT EXISTS idx_email_group_campaigns_campaign_id ON email_group_campaigns(campaign_id); 
+CREATE INDEX IF NOT EXISTS idx_email_group_campaigns_campaign_id ON email_group_campaigns(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_templates_name ON templates(name);
 
 
 -- Insert sample data
 INSERT INTO organizations (name) VALUES 
-    ('sendPulse');
+    ('sendPulse'),
+    ('Test Org');;
 
-INSERT INTO email_addresses (address) VALUES 
+INSERT INTO email_addresses (address, organization_id) 
+SELECT address, (SELECT id FROM organizations WHERE name = 'sendPulse')
+FROM (VALUES 
     ('test1@example.com'),
     ('tagl8qosmmbj1x@gmail.com'),
     ('casper.castaneda@yahoo.com'),
@@ -75,9 +91,12 @@ INSERT INTO email_addresses (address) VALUES
     ('abraham.george@yahoo.com'),
     ('ttm4n9p19b5@aol.com'),
     ('test2@example.com'),
-    ('paul_stein@bluehost.com');
+    ('paul_stein@bluehost.com')
+) AS t(address);
 
-INSERT INTO email_groups (name) VALUES 
+INSERT INTO email_groups (name, organization_id) 
+SELECT name, (SELECT id FROM organizations WHERE name = 'sendPulse')
+FROM (VALUES 
     ('Artists'),
     ('Musicians'),
     ('Songwriters'),
@@ -90,9 +109,12 @@ INSERT INTO email_groups (name) VALUES
     ('Non-subscribers'),
     ('Subscribers'),
     ('Cancelled Subscribers'),
-    ('Longterm Subscribers');
+    ('Longterm Subscribers')
+) AS t(name);
 
-INSERT INTO campaigns (name) VALUES 
+INSERT INTO campaigns (name, organization_id) 
+SELECT name, (SELECT id FROM organizations WHERE name = 'sendPulse')
+FROM (VALUES 
     ('Summer 2024'),
     ('Winter 2024'),
     ('Spring Into Saving'),
@@ -108,7 +130,8 @@ INSERT INTO campaigns (name) VALUES
     ('Seasonal'),
     ('New Release'),
     ('Catalog'),
-    ('Re-engagement');
+    ('Re-engagement')
+) AS t(name);
 
 -- Create email group memberships by referencing the inserted records
 INSERT INTO email_group_members (email_group_id, email_address_id) 
@@ -129,3 +152,20 @@ FROM email_groups eg
 CROSS JOIN email_addresses ea
 WHERE eg.name = 'Longterm Subscribers' 
     AND ea.address IN ('casper.castaneda@yahoo.com', 'test2@example.com', 'foo04bcnj5hxmkr1v@comcast.net');
+
+-- Insert template records
+INSERT INTO templates (name, html, organization_id)
+SELECT name, html, (SELECT id FROM organizations WHERE name = 'sendPulse')
+FROM (VALUES 
+    ('Welcome Email', '<div><h1>Welcome!</h1><p>We''re excited to have you join us.</p><button>Get Started</button></div>'),
+    ('Monthly Newsletter', '<div><h2>Monthly Updates</h2><p>Here''s what''s new this month...</p><div class="content-area"></div></div>'),
+    ('Product Launch', '<div style="background-color: #f8f8f8;"><h1>New Release!</h1><p>Check out our latest product...</p><img src="product.jpg" /></div>'),
+    ('Holiday Special', '<div class="festive"><h1>Season''s Greetings!</h1><p>Celebrate with our special offers...</p><div class="offers"></div></div>'),
+    ('Birthday Wishes', '<div style="text-align: center;"><h1>🎉 Happy Birthday! 🎂</h1><p>Here''s a special gift for your special day...</p></div>'),
+    ('Abandoned Cart', '<div><h2>Still Interested?</h2><p>Your cart is waiting for you...</p><button class="cta">Complete Purchase</button></div>'),
+    ('Event Invitation', '<div class="event"><h1>You''re Invited!</h1><p>Join us for an exclusive event...</p><button>RSVP Now</button></div>'),
+    ('Feedback Request', '<div><h2>We Value Your Opinion</h2><p>Please take our quick survey...</p><div class="survey-embed"></div></div>'),
+    ('Order Confirmation', '<div class="receipt"><h1>Thank You for Your Order</h1><p>Order #: {{order_number}}</p><div class="order-details"></div></div>'),
+    ('Password Reset', '<div style="max-width: 600px;"><h2>Reset Your Password</h2><p>Click the link below to reset your password:</p><a href="{{reset_link}}">Reset Password</a></div>'),
+    ('Weekly Digest', '<div class="digest"><h1>This Week''s Highlights</h1><ul>{{#each highlights}}<li>{{this}}</li>{{/each}}</ul></div>')
+) AS t(name, html);

@@ -1,14 +1,18 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
-type AuthResponse struct {
+type PermissionsResponse struct {
 	UserID      string   `json:"user_id"`
+	OrgID       string   `json:"org_id"`
 	Permissions []string `json:"permissions"`
 }
 
@@ -16,38 +20,49 @@ type AuthResponse struct {
 func Middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// // uncomment this out to skip auth for all routes
+			// return next(c)
+
 			// Skip auth for certain paths
-			if isPublicPath(c.Path()) {
-				return next(c)
-			}
+			// if isPublicPath(c.Path()) {
+			// 	return next(c)
+			// }
 
-			// Get token from Authorization header
-			token := extractToken(c.Request())
-			if token == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "missing authorization token")
-			}
+			// // Get token from Authorization header
+			// access_token := extractToken(c.Request())
+			// if access_token == "" {
+			// 	return echo.NewHTTPError(http.StatusUnauthorized, "missing authorization token")
+			// }
 
-			// Call auth service to validate token and get permissions
-			authResp, err := validateTokenWithAuthService(token)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
-			}
+			// // Call auth service to validate token and get permissions
+			// authResp, err := validateTokenWithAuthService(access_token)
+			// if err != nil {
+			// 	return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+			// }
 
-			// Get required permission for this path and method
-			requiredPerm := getRequiredPermission(c.Path(), c.Request().Method)
-			if requiredPerm == "" {
-				// No permission required for this path
-				return next(c)
-			}
+			// // Get org ID from URL if present (e.g., /api/v1/orgs/:orgId/...)
+			// if orgID := c.Param("orgId"); orgID != "" {
+			// 	// Check if user belongs to this org
+			// 	if orgID != authResp.OrgID {
+			// 		return echo.NewHTTPError(http.StatusForbidden, "user does not belong to this organization")
+			// 	}
+			// }
 
-			// Check if user has required permission
-			if !hasPermission(authResp.Permissions, requiredPerm) {
-				return echo.NewHTTPError(http.StatusForbidden,
-					fmt.Sprintf("insufficient permissions: %s required", requiredPerm))
-			}
+			// // Get required permission for this path and method
+			// requiredPerm := getRequiredPermission(c.Path(), c.Request().Method)
+			// if requiredPerm == "" {
+			// 	// No permission required for this path
+			// 	return next(c)
+			// }
 
-			// Store auth response in context for later use
-			c.Set("auth", authResp)
+			// // Check if user has required permission
+			// if !hasPermission(authResp.Permissions, requiredPerm) {
+			// 	return echo.NewHTTPError(http.StatusForbidden,
+			// 		fmt.Sprintf("insufficient permissions: %s required", requiredPerm))
+			// }
+
+			// // Store auth response in context for later use
+			// c.Set("auth", authResp)
 
 			return next(c)
 		}
@@ -81,18 +96,54 @@ func extractToken(r *http.Request) string {
 }
 
 // validateTokenWithAuthService calls the auth service to validate the token
-func validateTokenWithAuthService(token string) (*AuthResponse, error) {
-	// This would typically make an HTTP request to your auth service
-	// For now, this is a mock implementation
-	if token == "" {
-		return nil, fmt.Errorf("invalid token")
+func validateTokenWithAuthService(token string) (*PermissionsResponse, error) {
+	// Parse the JWT token to extract the subject (uuid)
+	claims := &jwt.RegisteredClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		// Replace with your actual secret key
+		return []byte("your-secret-key"), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %v", err)
 	}
 
-	// Mock response
-	return &AuthResponse{
-		UserID:      "user123",
-		Permissions: []string{"email:send", "template:read"},
-	}, nil
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	// Create request to permissions endpoint using Subject from claims
+	url := fmt.Sprintf("http://localhost:8080/api/v1/users/%s/permissions", claims.Subject)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Add authorization header
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error calling permissions service: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("permissions service returned status: %d", resp.StatusCode)
+	}
+
+	// Parse response
+	var authResp PermissionsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&authResp); err != nil {
+		return nil, fmt.Errorf("error parsing response: %v", err)
+	}
+
+	// Set the UserID from the token subject
+	authResp.UserID = claims.Subject
+
+	return &authResp, nil
 }
 
 // getRequiredPermission returns the required permission for a given path and method

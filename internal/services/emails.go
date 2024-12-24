@@ -15,7 +15,7 @@ func NewEmailService(db *sql.DB) *EmailService {
 	return &EmailService{db: db}
 }
 
-func (s *EmailService) GetAll(params models.PaginationParams) (*models.PaginatedResponse[models.EmailAddress], error) {
+func (s *EmailService) GetAll(organizationID string, params models.PaginationParams) (*models.PaginatedResponse[models.EmailAddress], error) {
 	if params.Page < 1 {
 		params.Page = 1
 	}
@@ -24,18 +24,19 @@ func (s *EmailService) GetAll(params models.PaginationParams) (*models.Paginated
 	}
 
 	var total int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM email_addresses").Scan(&total)
+	err := s.db.QueryRow("SELECT COUNT(*) FROM email_addresses WHERE organization_id = $1", organizationID).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("error counting emails: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.PageSize
 	rows, err := s.db.Query(
-		`SELECT id, address, created_at 
+		`SELECT id, address, organization_id, created_at 
 		FROM email_addresses 
+		WHERE organization_id = $1
 		ORDER BY created_at DESC 
-		LIMIT $1 OFFSET $2`,
-		params.PageSize, offset,
+		LIMIT $2 OFFSET $3`,
+		organizationID, params.PageSize, offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching emails: %w", err)
@@ -48,6 +49,7 @@ func (s *EmailService) GetAll(params models.PaginationParams) (*models.Paginated
 		if err := rows.Scan(
 			&email.ID,
 			&email.Address,
+			&email.OrganizationID,
 			&email.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning email: %w", err)
@@ -58,14 +60,17 @@ func (s *EmailService) GetAll(params models.PaginationParams) (*models.Paginated
 	return models.NewPaginatedResponse(emails, total, params.Page, params.PageSize), nil
 }
 
-func (s *EmailService) GetByID(id string) (*models.EmailAddress, error) {
+func (s *EmailService) GetByID(organizationID string, id string) (*models.EmailAddress, error) {
 	var email models.EmailAddress
 	err := s.db.QueryRow(
-		"SELECT id, address, created_at FROM email_addresses WHERE id = $1",
-		id,
+		`SELECT id, address, organization_id, created_at 
+		FROM email_addresses 
+		WHERE id = $1 AND organization_id = $2`,
+		id, organizationID,
 	).Scan(
 		&email.ID,
 		&email.Address,
+		&email.OrganizationID,
 		&email.CreatedAt,
 	)
 	if err == sql.ErrNoRows {
@@ -77,16 +82,17 @@ func (s *EmailService) GetByID(id string) (*models.EmailAddress, error) {
 	return &email, nil
 }
 
-func (s *EmailService) Create(req *models.CreateEmailAddressRequest) (*models.EmailAddress, error) {
+func (s *EmailService) Create(organizationID string, req *models.CreateEmailAddressRequest) (*models.EmailAddress, error) {
 	var email models.EmailAddress
 	err := s.db.QueryRow(
-		`INSERT INTO email_addresses (address) 
-		VALUES ($1) 
-		RETURNING id, address, created_at`,
-		req.Address,
+		`INSERT INTO email_addresses (address, organization_id) 
+		VALUES ($1, $2) 
+		RETURNING id, address, organization_id, created_at`,
+		req.Address, organizationID,
 	).Scan(
 		&email.ID,
 		&email.Address,
+		&email.OrganizationID,
 		&email.CreatedAt,
 	)
 	if err != nil {

@@ -30,6 +30,7 @@ func NewServer(db *sql.DB) *Server {
 	handlers.InitCampaigns(db)
 	handlers.InitEmailGroupMembers(db)
 	handlers.InitOrganizations(db)
+	handlers.InitTemplates(db)
 
 	// Add middleware
 	middleware.Setup(e)

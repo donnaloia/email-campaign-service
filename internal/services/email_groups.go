@@ -15,7 +15,7 @@ func NewEmailGroupService(db *sql.DB) *EmailGroupService {
 	return &EmailGroupService{db: db}
 }
 
-func (s *EmailGroupService) GetAll(params models.PaginationParams) (*models.PaginatedResponse[models.EmailGroup], error) {
+func (s *EmailGroupService) GetAll(organizationID string, params models.PaginationParams) (*models.PaginatedResponse[models.EmailGroup], error) {
 	if params.Page < 1 {
 		params.Page = 1
 	}
@@ -33,7 +33,7 @@ func (s *EmailGroupService) GetAll(params models.PaginationParams) (*models.Pagi
 	// Calculate offset
 	offset := (params.Page - 1) * params.PageSize
 	rows, err := s.db.Query(
-		`SELECT id, name, created_at 
+		`SELECT id, name, organization_id, created_at 
 		FROM email_groups 
 		ORDER BY created_at DESC 
 		LIMIT $1 OFFSET $2`,
@@ -50,6 +50,7 @@ func (s *EmailGroupService) GetAll(params models.PaginationParams) (*models.Pagi
 		if err := rows.Scan(
 			&group.ID,
 			&group.Name,
+			&group.OrganizationID,
 			&group.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning email group: %w", err)
@@ -60,14 +61,15 @@ func (s *EmailGroupService) GetAll(params models.PaginationParams) (*models.Pagi
 	return models.NewPaginatedResponse(groups, total, params.Page, params.PageSize), nil
 }
 
-func (s *EmailGroupService) GetByID(id string) (*models.EmailGroup, error) {
+func (s *EmailGroupService) GetByID(organizationID string, id string) (*models.EmailGroup, error) {
 	var group models.EmailGroup
 	err := s.db.QueryRow(
-		"SELECT id, name, created_at FROM email_groups WHERE id = $1",
+		"SELECT id, name, organization_id, created_at FROM email_groups WHERE id = $1",
 		id,
 	).Scan(
 		&group.ID,
 		&group.Name,
+		&group.OrganizationID,
 		&group.CreatedAt,
 	)
 	if err == sql.ErrNoRows {
@@ -79,16 +81,18 @@ func (s *EmailGroupService) GetByID(id string) (*models.EmailGroup, error) {
 	return &group, nil
 }
 
-func (s *EmailGroupService) Create(req *models.CreateEmailGroupRequest) (*models.EmailGroup, error) {
+func (s *EmailGroupService) Create(organizationID string, req *models.CreateEmailGroup) (*models.EmailGroup, error) {
 	var group models.EmailGroup
 	err := s.db.QueryRow(
-		`INSERT INTO email_groups (name) 
-		VALUES ($1) 
-		RETURNING id, name, created_at`,
+		`INSERT INTO email_groups (name, organization_id) 
+		VALUES ($1, $2) 
+		RETURNING id, name, organization_id, created_at`,
 		req.Name,
+		req.OrganizationID,
 	).Scan(
 		&group.ID,
 		&group.Name,
+		&group.OrganizationID,
 		&group.CreatedAt,
 	)
 	if err != nil {

@@ -25,14 +25,22 @@ type CampaignHandler struct {
 	campaignService *services.CampaignService
 }
 
-// GetCampaign handles GET requests to retrieve a single campaign
+// Get handles GET requests to retrieve a single campaign
 func (h *CampaignHandler) Get(c echo.Context) error {
+	// Get the organization ID from the URL
+	organizationID := c.Param("organization_id")
+	if organizationID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing organization ID")
+	}
+
+	// Get the campaign ID from the URL
 	id := c.Param("id")
 	if id == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "Missing ID")
 	}
 
-	campaign, err := h.campaignService.GetByID(id)
+	// Get the resource
+	campaign, err := h.campaignService.GetByID(id, organizationID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
@@ -42,6 +50,12 @@ func (h *CampaignHandler) Get(c echo.Context) error {
 
 // ListCampaigns handles GET requests to retrieve campaigns
 func (h *CampaignHandler) List(c echo.Context) error {
+	// Get the organization ID from the URL
+	organizationID := c.Param("organizationID")
+	if organizationID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing organization ID")
+	}
+
 	// Parse pagination parameters from query string
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	pageSize, _ := strconv.Atoi(c.QueryParam("page_size"))
@@ -53,7 +67,7 @@ func (h *CampaignHandler) List(c echo.Context) error {
 	}
 
 	// Pass the params to GetAll
-	result, err := h.campaignService.GetAll(params)
+	result, err := h.campaignService.GetAll(organizationID, params)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -63,12 +77,23 @@ func (h *CampaignHandler) List(c echo.Context) error {
 
 // CreateCampaign handles POST requests to create new campaigns
 func (h *CampaignHandler) Create(c echo.Context) error {
-	var req models.CreateCampaignRequest
+	// Get the organization ID from the URL
+	organizationID := c.Param("organizationID")
+	if organizationID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing organization ID")
+	}
+
+	// Bind the request body to the CreateCampaign struct
+	var req models.CreateCampaign
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	campaign, err := h.campaignService.Create(&req)
+	// Add organizationID to the request
+	req.OrganizationID = organizationID
+
+	// Create the resource
+	campaign, err := h.campaignService.Create(organizationID, &req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
