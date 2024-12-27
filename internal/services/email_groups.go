@@ -88,7 +88,7 @@ func (s *EmailGroupService) Create(organizationID string, req *models.CreateEmai
 		VALUES ($1, $2) 
 		RETURNING id, name, organization_id, created_at`,
 		req.Name,
-		req.OrganizationID,
+		organizationID,
 	).Scan(
 		&group.ID,
 		&group.Name,
