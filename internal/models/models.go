@@ -47,16 +47,23 @@ type CreateEmailGroupMember struct {
 
 // Campaign is a high-level object representing a campaign
 type Campaign struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	OrganizationID string    `json:"organization_id"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID             string     `json:"id"`
+	Name           string     `json:"name"`
+	OrganizationID string     `json:"organization_id"`
+	Templates      []Template `json:"templates"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
 
 // Create a single campaign
 type CreateCampaign struct {
 	Name           string `json:"name"`
 	OrganizationID string `json:"organization_id"`
+}
+
+// Update a single campaign
+type UpdateCampaign struct {
+	Name      string   `json:"name"`
+	Templates []string `json:"templates"`
 }
 
 // EmailGroupCampaign is an intermediary model that links an email group to a campaign
@@ -89,6 +96,20 @@ type CreateTemplate struct {
 	HTML           string `json:"html"`
 }
 
+// CampaignTemplate is an intermediary model that links a campaign to a template
+type CampaignTemplate struct {
+	ID         string    `json:"id"`
+	CampaignID string    `json:"campaign_id"`
+	TemplateID string    `json:"template_id"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// Create a campaign template
+type CreateCampaignTemplate struct {
+	CampaignID string `json:"campaign_id"`
+	TemplateID string `json:"template_id"`
+}
+
 // Organization is a high-level object representing an Organization
 type Organization struct {
 	ID        string    `json:"id"`
@@ -99,4 +120,23 @@ type Organization struct {
 // Create an organization
 type CreateOrganization struct {
 	Name string `json:"name"`
+}
+
+// Profile is a high-level object representing a Profile
+type Profile struct {
+	ID             string    `json:"id"`
+	Username       string    `json:"username"`
+	Email          string    `json:"email"`
+	OrganizationID string    `json:"organization_id"`
+	PictureURL     string    `json:"picture_url"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+// Create a profile
+type CreateProfile struct {
+	ID             string `json:"id"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	OrganizationID string `json:"organization_id"`
+	PictureURL     string `json:"picture_url"`
 }

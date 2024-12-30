@@ -12,4 +12,4 @@ func New(status, message string, data interface{}) Response {
 		Message: message,
 		Data:    data,
 	}
-} 
+}

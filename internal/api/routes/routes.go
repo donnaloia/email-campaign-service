@@ -22,6 +22,12 @@ func Setup(e *echo.Echo) {
 	// Resources under organization
 	org := organizations.Group("/:organization_id")
 
+	// Profile Routes
+	profiles := org.Group("/profiles")
+	profiles.GET("", handlers.Profiles.List)
+	profiles.GET("/:id", handlers.Profiles.Get)
+	profiles.POST("", handlers.Profiles.Create)
+
 	// Email Routes
 	emails := org.Group("/email-addresses")
 	emails.GET("", handlers.Emails.List)
@@ -45,6 +51,7 @@ func Setup(e *echo.Echo) {
 	campaigns.GET("", handlers.Campaigns.List)
 	campaigns.GET("/:id", handlers.Campaigns.Get)
 	campaigns.POST("", handlers.Campaigns.Create)
+	campaigns.PATCH("/:id", handlers.Campaigns.Update)
 
 	// Template Routes
 	templates := org.Group("/templates")

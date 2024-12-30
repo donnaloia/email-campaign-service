@@ -8,6 +8,16 @@ CREATE TABLE IF NOT EXISTS organizations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    picture_url VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Email addresses table
 CREATE TABLE IF NOT EXISTS email_addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -59,7 +69,17 @@ CREATE TABLE IF NOT EXISTS templates (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Campaign templates (junction table for campaigns and templates)
+CREATE TABLE IF NOT EXISTS campaign_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    template_id UUID NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(campaign_id, template_id)
+);
+
 -- Add indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_campaigns_organization_id ON campaigns(organization_id);
 CREATE INDEX IF NOT EXISTS idx_email_addresses_address ON email_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_email_groups_name ON email_groups(name);
 CREATE INDEX IF NOT EXISTS idx_campaigns_name ON campaigns(name);
@@ -68,6 +88,9 @@ CREATE INDEX IF NOT EXISTS idx_email_group_members_email_address_id ON email_gro
 CREATE INDEX IF NOT EXISTS idx_email_group_campaigns_email_group_id ON email_group_campaigns(email_group_id);
 CREATE INDEX IF NOT EXISTS idx_email_group_campaigns_campaign_id ON email_group_campaigns(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_templates_name ON templates(name);
+CREATE INDEX IF NOT EXISTS idx_templates_organization_id ON templates(organization_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_organization_id ON profiles(organization_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
 
 
 -- Insert sample data

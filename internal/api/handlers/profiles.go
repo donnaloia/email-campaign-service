@@ -12,21 +12,21 @@ import (
 )
 
 // Campaigns handler group - capitalized to make it public
-var Campaigns *CampaignHandler
+var Profiles *ProfileHandler
 
-// Initialize the campaigns handler
-func InitCampaigns(db *sql.DB) {
-	Campaigns = &CampaignHandler{
-		campaignService: services.NewCampaignService(db),
+// Initialize the profiles handler
+func InitProfiles(db *sql.DB) {
+	Profiles = &ProfileHandler{
+		profileService: services.NewProfileService(db),
 	}
 }
 
-type CampaignHandler struct {
-	campaignService *services.CampaignService
+type ProfileHandler struct {
+	profileService *services.ProfileService
 }
 
 // Get handles GET requests to retrieve a single campaign
-func (h *CampaignHandler) Get(c echo.Context) error {
+func (h *ProfileHandler) Get(c echo.Context) error {
 	// Get the organization ID from the URL
 	organizationID := c.Param("organization_id")
 	if organizationID == "" {
@@ -40,16 +40,16 @@ func (h *CampaignHandler) Get(c echo.Context) error {
 	}
 
 	// Get the resource
-	campaign, err := h.campaignService.GetByID(id, organizationID)
+	profile, err := h.profileService.GetByID(organizationID, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, campaign)
+	return c.JSON(http.StatusOK, profile)
 }
 
 // ListCampaigns handles GET requests to retrieve campaigns
-func (h *CampaignHandler) List(c echo.Context) error {
+func (h *ProfileHandler) List(c echo.Context) error {
 	// Get the organization ID from the URL
 	organizationID := c.Param("organization_id")
 	if organizationID == "" {
@@ -67,7 +67,7 @@ func (h *CampaignHandler) List(c echo.Context) error {
 	}
 
 	// Pass the params to GetAll
-	result, err := h.campaignService.GetAll(organizationID, params)
+	result, err := h.profileService.GetAll(organizationID, params)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -75,16 +75,16 @@ func (h *CampaignHandler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-// CreateCampaign handles POST requests to create new campaigns
-func (h *CampaignHandler) Create(c echo.Context) error {
+// CreateProfile handles POST requests to create new profiles
+func (h *ProfileHandler) Create(c echo.Context) error {
 	// Get the organization ID from the URL
 	organizationID := c.Param("organization_id")
 	if organizationID == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "Missing organization ID")
 	}
 
-	// Bind the request body to the CreateCampaign struct
-	var req models.CreateCampaign
+	// Bind the request body to the CreateProfile struct
+	var req models.CreateProfile
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -93,40 +93,10 @@ func (h *CampaignHandler) Create(c echo.Context) error {
 	req.OrganizationID = organizationID
 
 	// Create the resource
-	campaign, err := h.campaignService.Create(organizationID, &req)
+	profile, err := h.profileService.Create(organizationID, &req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusCreated, campaign)
-}
-
-func (h *CampaignHandler) Update(c echo.Context) error {
-
-	// Get the organization ID from the URL
-	organizationID := c.Param("organization_id")
-	if organizationID == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "Missing organization ID")
-	}
-
-	// Get the campaign ID from the URL
-
-	id := c.Param("id")
-	if id == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "Missing ID")
-	}
-
-	// Bind the request body to the UpdateCampaign struct
-	var req models.UpdateCampaign
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	// Update the resource
-	campaign, err := h.campaignService.Update(organizationID, id, &req)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, campaign)
+	return c.JSON(http.StatusCreated, profile)
 }
