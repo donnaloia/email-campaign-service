@@ -83,8 +83,7 @@ func (s *CampaignService) GetByID(organizationID string, id string) (*models.Cam
 		return nil, fmt.Errorf("error fetching campaign: %w", err)
 	}
 
-	campaign.Templates = []models.Template{}
-
+	// Get the templates
 	rows, err := s.db.Query(`
 		SELECT t.id, t.name, t.organization_id, t.html, t.created_at
 		FROM templates t
@@ -92,7 +91,13 @@ func (s *CampaignService) GetByID(organizationID string, id string) (*models.Cam
 		WHERE ct.campaign_id = $1`,
 		id,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching templates: %w", err)
+	}
+	defer rows.Close()
 
+	// Validate templates
+	campaign.Templates = []models.Template{}
 	for rows.Next() {
 		var template models.Template
 		if err := rows.Scan(
@@ -104,7 +109,37 @@ func (s *CampaignService) GetByID(organizationID string, id string) (*models.Cam
 		); err != nil {
 			return nil, fmt.Errorf("error scanning template: %w", err)
 		}
+		// Update campaign with the templates
 		campaign.Templates = append(campaign.Templates, template)
+	}
+
+	// Get the email groups
+	rows, err = s.db.Query(`
+		SELECT eg.id, eg.name, eg.organization_id, eg.created_at
+		FROM email_groups eg
+		JOIN email_group_campaigns egc ON egc.email_group_id = eg.id
+		WHERE egc.campaign_id = $1`,
+		id,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching email groups: %w", err)
+	}
+	defer rows.Close()
+
+	// Validate email groups
+	campaign.EmailGroups = []models.EmailGroup{}
+	for rows.Next() {
+		var emailGroup models.EmailGroup
+		if err := rows.Scan(
+			&emailGroup.ID,
+			&emailGroup.Name,
+			&emailGroup.OrganizationID,
+			&emailGroup.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning email group: %w", err)
+		}
+		// Update campaign with the email groups
+		campaign.EmailGroups = append(campaign.EmailGroups, emailGroup)
 	}
 
 	return &campaign, nil
@@ -137,8 +172,8 @@ func (s *CampaignService) Update(organizationID string, id string, req *models.U
 	}
 	defer tx.Rollback() // Rollback if we don't commit
 
-	// First check if campaign exists and belongs to organization
-	_, err = s.GetByID(organizationID, id)
+	// Get current campaign state
+	currentCampaign, err := s.GetByID(organizationID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -179,11 +214,50 @@ func (s *CampaignService) Update(organizationID string, id string, req *models.U
 				return nil, fmt.Errorf("error adding template %s: %w", templateID, err)
 			}
 		}
+
+	}
+
+	// Update the email_groups if provided
+	if req.EmailGroups != nil {
+		_, err = tx.Exec(
+			`DELETE FROM email_group_campaigns 
+			 WHERE campaign_id = $1`,
+			id,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error removing existing email_groups: %w", err)
+		}
+
+		for _, emailGroupID := range req.EmailGroups {
+			_, err = tx.Exec(
+				`INSERT INTO email_group_campaigns (campaign_id, email_group_id)
+				 VALUES ($1, $2)`,
+				id, emailGroupID,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("error adding email_group %s: %w", emailGroupID, err)
+			}
+		}
+	}
+
+	// Update campaign status
+	if req.Status != "" {
+		_, err = tx.Exec(
+			`UPDATE campaigns SET status = $1 WHERE id = $2 AND organization_id = $3`,
+			req.Status, id, organizationID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error updating campaign status: %w", err)
+		}
 	}
 
 	// Commit the transaction
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing transaction: %w", err)
+	}
+
+	if currentCampaign.Status != req.Status && req.Status == models.CampaignStatusLaunched {
+		// events.PublishEmails(campaign.id, "campaign.launched")
 	}
 
 	// Return the updated campaign

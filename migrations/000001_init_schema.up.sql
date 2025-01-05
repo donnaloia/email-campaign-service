@@ -47,8 +47,10 @@ CREATE TABLE IF NOT EXISTS email_group_members (
 CREATE TABLE IF NOT EXISTS campaigns (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'draft',
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT valid_campaign_status CHECK (status IN ('draft', 'scheduled', 'launched'))
 );
 
 -- Email group campaigns (junction table for email_groups and campaigns)
@@ -135,9 +137,17 @@ FROM (VALUES
     ('Longterm Subscribers')
 ) AS t(name);
 
-INSERT INTO campaigns (name, organization_id) 
-SELECT name, (SELECT id FROM organizations WHERE name = 'sendPulse')
-FROM (VALUES 
+INSERT INTO campaigns (name, status, organization_id) 
+SELECT 
+    name,
+    CASE (RANDOM() * 3)::INT
+        WHEN 0 THEN 'draft'
+        WHEN 1 THEN 'scheduled'
+        WHEN 2 THEN 'launched'
+    END as status,
+    (SELECT id FROM organizations WHERE name = 'sendPulse')
+FROM (VALUES
+    ('Fall 2025'),
     ('Summer 2024'),
     ('Winter 2024'),
     ('Spring Into Saving'),

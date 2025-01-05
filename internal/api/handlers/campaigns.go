@@ -40,7 +40,7 @@ func (h *CampaignHandler) Get(c echo.Context) error {
 	}
 
 	// Get the resource
-	campaign, err := h.campaignService.GetByID(id, organizationID)
+	campaign, err := h.campaignService.GetByID(organizationID, id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}

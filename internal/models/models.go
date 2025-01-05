@@ -2,6 +2,12 @@ package models
 
 import "time"
 
+const (
+	CampaignStatusDraft     = "draft"
+	CampaignStatusScheduled = "scheduled"
+	CampaignStatusLaunched  = "launched"
+)
+
 // EmailAddress is a single email address
 type EmailAddress struct {
 	ID             string    `json:"id"`
@@ -47,11 +53,13 @@ type CreateEmailGroupMember struct {
 
 // Campaign is a high-level object representing a campaign
 type Campaign struct {
-	ID             string     `json:"id"`
-	Name           string     `json:"name"`
-	OrganizationID string     `json:"organization_id"`
-	Templates      []Template `json:"templates"`
-	CreatedAt      time.Time  `json:"created_at"`
+	ID             string       `json:"id"`
+	Name           string       `json:"name"`
+	Status         string       `json:"status"`
+	OrganizationID string       `json:"organization_id"`
+	CreatedAt      time.Time    `json:"created_at"`
+	Templates      []Template   `json:"templates"`
+	EmailGroups    []EmailGroup `json:"email_groups"`
 }
 
 // Create a single campaign
@@ -62,8 +70,10 @@ type CreateCampaign struct {
 
 // Update a single campaign
 type UpdateCampaign struct {
-	Name      string   `json:"name"`
-	Templates []string `json:"templates"`
+	Name        string   `json:"name,omitempty"`
+	Status      string   `json:"status,omitempty"`
+	Templates   []string `json:"templates,omitempty"`
+	EmailGroups []string `json:"email_groups,omitempty"` // Array of email group IDs
 }
 
 // EmailGroupCampaign is an intermediary model that links an email group to a campaign
