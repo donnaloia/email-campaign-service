@@ -14,7 +14,7 @@ A modern standalone email campaign service written in Go.
 - manage email templates, email groups, email reciepents, and campaigns
 - designed to plug directly into a distributed or integrated system
 - built with performance and scale in mind
-- see it deployed in a distributed system here: [SendPulse](https://github.com/donnaloia/sendpulse)
+- see it deployed in an event-driven, distributed system here: [SendPulse](https://github.com/donnaloia/sendpulse)
 
 
 ## Tech Stack
@@ -153,7 +153,6 @@ To deploy this project locally run:
 
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
-| `id`      | `string` | **Required**. Uuid of the email template we are updating|
 | `name`| `json` | **Required**. Name of the email template we are updating|
 | `html`| `json` | **Required**. Html of the email template we are updating|
 
@@ -164,6 +163,67 @@ To deploy this project locally run:
 }
 ```
 
+#### Get Email Campaign
+
+```http
+  GET /api/v1/email-campaigns/<id>
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`    | `string` | **Required**. Uuid of the email group to fetch |
+
+```json
+{
+    "name": "my first email campaign",
+    "created_at": "2025-01-01 12:00:00",
+    "email_groups": ["my first email group","my second email group"],
+    "email_templates": "my first email template"
+}
+```
+
+
+#### Create Email Campaign
+
+```http
+  POST /api/v1/email-campaigns/
+```
+
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `name`| `json` | **Required**. Name of the email campaign we are creating|
+| `email_groups`| `json` | **Required**. List of email groups to add to the campaign|
+| `email_templates`| `json` | **Required**. List of email templates to add to the campaign|
+
+```json
+{
+   "name": "my first email campaign",
+   "email_groups": ["my first email group","my second email group"],
+   "email_templates": "my first email template"
+}
+```
+
+
+#### Update Email Campaign
+
+```http
+  PUT /api/v1/email-campaigns/<id>
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `name`| `json` | **Required**. Name of the email campaign we are updating|
+| `email_groups`| `json` | **Required**. List of email groups to add to the campaign|
+| `email_templates`| `json` | **Required**. List of email templates to add to the campaign|
+
+```json
+{
+   "name": "my first email campaign",
+   "email_groups": ["my first email group","my second email group"],
+   "email_templates": "my first email template"
+}
+```
 
 ## Todo
 
