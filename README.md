@@ -3,7 +3,7 @@
 
 A modern standalone email campaign service written in Go.
 
-![Erlang](https://img.shields.io/badge/Erlang-white.svg?style=for-the-badge&logo=erlang&logoColor=a90533)![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)![Grafana](https://img.shields.io/badge/grafana-%23F46800.svg?style=for-the-badge&logo=grafana&logoColor=white)![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 ![example workflow](https://github.com/donnaloia/email-campaign-service/actions/workflows/docker-build-push.yml/badge.svg)
 
@@ -102,6 +102,65 @@ To deploy this project locally run:
 {
    "name": "my first email group",
    "email_addresses": ["id1@example.com", "id2@example.com", "id3@example.com"]
+}
+```
+
+
+#### Get Email Templates
+
+```http
+  GET /api/v1/email-templates/<id>
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`    | `string` | **Required**. Uuid of the email template to fetch |
+
+```json
+{
+    "name": "my first email template",
+    "created_at": "2025-01-01 12:00:00",
+    "html": "<p>my first email template</p>",
+}
+```
+
+
+#### Create Email Template
+
+```http
+  POST /api/v1/email-templates/
+```
+
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `name`| `json` | **Required**. Name of the email template we are creating|
+| `html`| `json` | **Required**. Html of the email template we are creating|
+
+```json
+{
+   "name": "my first email template",
+   "html": "<p>my first email template</p>"
+}
+```
+
+
+#### Update Email Template
+
+```http
+  PUT /api/v1/email-templates/<id>
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`      | `string` | **Required**. Uuid of the email template we are updating|
+| `name`| `json` | **Required**. Name of the email template we are updating|
+| `html`| `json` | **Required**. Html of the email template we are updating|
+
+```json
+{
+   "name": "my first email template",
+   "html": "<p>my first email template</p>"
 }
 ```
 
