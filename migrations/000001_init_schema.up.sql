@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS email_group_members (
 CREATE TABLE IF NOT EXISTS campaigns (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'draft',
+    status VARCHAR(50) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'scheduled', 'launched')),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT valid_campaign_status CHECK (status IN ('draft', 'scheduled', 'launched'))
@@ -140,31 +140,27 @@ FROM (VALUES
 INSERT INTO campaigns (name, status, organization_id) 
 SELECT 
     name,
-    CASE (RANDOM() * 3)::INT
-        WHEN 0 THEN 'draft'
-        WHEN 1 THEN 'scheduled'
-        WHEN 2 THEN 'launched'
-    END as status,
+    status,
     (SELECT id FROM organizations WHERE name = 'sendPulse')
 FROM (VALUES
-    ('Fall 2025'),
-    ('Summer 2024'),
-    ('Winter 2024'),
-    ('Spring Into Saving'),
-    ('Back to School'),
-    ('Holiday 2024'),
-    ('Winter 2025'),
-    ('Valentine''s Day 2025'),
-    ('Easter 2025'),
-    ('Summer 2025'),
-    ('Special Offers'),
-    ('Anniversary'),
-    ('Birthday'),
-    ('Seasonal'),
-    ('New Release'),
-    ('Catalog'),
-    ('Re-engagement')
-) AS t(name);
+    ('Fall 2025', 'draft'),
+    ('Summer 2024', 'launched'),
+    ('Winter 2024', 'scheduled'),
+    ('Spring Into Saving', 'draft'),
+    ('Back to School', 'launched'),
+    ('Holiday 2024', 'scheduled'),
+    ('Winter 2025', 'draft'),
+    ('Valentine''s Day 2025', 'scheduled'),
+    ('Easter 2025', 'launched'),
+    ('Summer 2025', 'draft'),
+    ('Special Offers', 'launched'),
+    ('Anniversary', 'scheduled'),
+    ('Birthday', 'draft'),
+    ('Seasonal', 'launched'),
+    ('New Release', 'scheduled'),
+    ('Catalog', 'draft'),
+    ('Re-engagement', 'launched')
+) AS t(name, status);
 
 -- Create email group memberships by referencing the inserted records
 INSERT INTO email_group_members (email_group_id, email_address_id) 
@@ -190,7 +186,71 @@ WHERE eg.name = 'Longterm Subscribers'
 INSERT INTO templates (name, html, organization_id)
 SELECT name, html, (SELECT id FROM organizations WHERE name = 'sendPulse')
 FROM (VALUES 
-    ('Welcome Email', '<div><h1>Welcome!</h1><p>We''re excited to have you join us.</p><button>Get Started</button></div>'),
+    ('Welcome Email', "<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Newsletter Title</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            font-size: 16px; /* Corrected font-size */
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            text-decoration: none;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h1>Welcome to Our Newsletter!</h1>
+        <p>This is our first newsletter. We're excited to share some exciting news and updates with you.</p>
+        <p><strong>Here's what's new:</strong></p>
+        <ul>
+            <li>We've launched a new product!</li>
+            <li>We've updated our pricing plans.</li>
+            <li>We're now hiring for several exciting roles.</li>
+        </ul>
+        <p>Learn more about these updates by visiting our <a href='https://www.yourwebsite.com'>website</a>.</p>
+        <p>We hope you enjoy this newsletter. Stay tuned for more updates in the future.</p>
+        <p><a href='https://www.yourwebsite.com/blog' class='button'>Read Our Blog</a></p>
+    </div>
+</body>
+</html>"),
     ('Monthly Newsletter', '<div><h2>Monthly Updates</h2><p>Here''s what''s new this month...</p><div class="content-area"></div></div>'),
     ('Product Launch', '<div style="background-color: #f8f8f8;"><h1>New Release!</h1><p>Check out our latest product...</p><img src="product.jpg" /></div>'),
     ('Holiday Special', '<div class="festive"><h1>Season''s Greetings!</h1><p>Celebrate with our special offers...</p><div class="offers"></div></div>'),

@@ -4,9 +4,13 @@ import (
 	"github.com/donnaloia/sendpulse/internal/api/handlers"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func Setup(e *echo.Echo) {
+	// Add trailing slash middleware
+	e.Pre(middleware.RemoveTrailingSlash())
+
 	// Health routes
 	e.GET("/health", handlers.HealthCheck)
 
