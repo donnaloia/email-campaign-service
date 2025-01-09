@@ -34,7 +34,7 @@ func (s *CampaignService) GetAll(organizationID string, params models.Pagination
 
 	offset := (params.Page - 1) * params.PageSize
 	rows, err := s.db.Query(
-		`SELECT id, name, organization_id, created_at 
+		`SELECT id, name, status, organization_id, created_at 
 		FROM campaigns 
 		WHERE organization_id = $1
 		ORDER BY created_at DESC 
@@ -52,6 +52,7 @@ func (s *CampaignService) GetAll(organizationID string, params models.Pagination
 		if err := rows.Scan(
 			&campaign.ID,
 			&campaign.Name,
+			&campaign.Status,
 			&campaign.OrganizationID,
 			&campaign.CreatedAt,
 		); err != nil {
@@ -66,13 +67,14 @@ func (s *CampaignService) GetAll(organizationID string, params models.Pagination
 func (s *CampaignService) GetByID(organizationID string, id string) (*models.Campaign, error) {
 	var campaign models.Campaign
 	err := s.db.QueryRow(
-		`SELECT id, name, organization_id, created_at 
+		`SELECT id, name, status, organization_id, created_at 
 		FROM campaigns 
 		WHERE id = $1 AND organization_id = $2`,
 		id, organizationID,
 	).Scan(
 		&campaign.ID,
 		&campaign.Name,
+		&campaign.Status,
 		&campaign.OrganizationID,
 		&campaign.CreatedAt,
 	)
@@ -150,11 +152,12 @@ func (s *CampaignService) Create(organizationID string, req *models.CreateCampai
 	err := s.db.QueryRow(
 		`INSERT INTO campaigns (name, organization_id) 
 		VALUES ($1, $2) 
-		RETURNING id, name, organization_id, created_at`,
+		RETURNING id, name, status, organization_id, created_at`,
 		req.Name, organizationID,
 	).Scan(
 		&campaign.ID,
 		&campaign.Name,
+		&campaign.Status,
 		&campaign.OrganizationID,
 		&campaign.CreatedAt,
 	)

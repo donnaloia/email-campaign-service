@@ -186,14 +186,12 @@ WHERE eg.name = 'Longterm Subscribers'
 INSERT INTO templates (name, html, organization_id)
 SELECT name, html, (SELECT id FROM organizations WHERE name = 'sendPulse')
 FROM (VALUES 
-    ('Welcome Email', "<!DOCTYPE html>
-<html>
-<head>
+    ('Welcome Email', '<html><head>
     <title>Your Newsletter Title</title>
     <style>
         body {
             font-family: sans-serif;
-            font-size: 16px; /* Corrected font-size */
+            font-size: 16px;
             line-height: 1.5;
             margin: 0;
             padding: 20px;
@@ -236,21 +234,20 @@ FROM (VALUES
     </style>
 </head>
 <body>
-    <div class='container'>
+    <div class="container">
         <h1>Welcome to Our Newsletter!</h1>
-        <p>This is our first newsletter. We're excited to share some exciting news and updates with you.</p>
-        <p><strong>Here's what's new:</strong></p>
+        <p>This is our first newsletter. Were excited to share some exciting news and updates with you.</p>
+        <p><strong>Heres whats new:</strong></p>
         <ul>
-            <li>We've launched a new product!</li>
-            <li>We've updated our pricing plans.</li>
-            <li>We're now hiring for several exciting roles.</li>
+            <li>Weve launched a new product!</li>
+            <li>Weve updated our pricing plans.</li>
+            <li>Were now hiring for several exciting roles.</li>
         </ul>
-        <p>Learn more about these updates by visiting our <a href='https://www.yourwebsite.com'>website</a>.</p>
+        <p>Learn more about these updates by visiting our <a href="https://www.yourwebsite.com">website</a>.</p>
         <p>We hope you enjoy this newsletter. Stay tuned for more updates in the future.</p>
-        <p><a href='https://www.yourwebsite.com/blog' class='button'>Read Our Blog</a></p>
+        <p><a href="https://www.yourwebsite.com/blog" class="button">Read Our Blog</a></p>
     </div>
-</body>
-</html>"),
+</body></html>'),
     ('Monthly Newsletter', '<div><h2>Monthly Updates</h2><p>Here''s what''s new this month...</p><div class="content-area"></div></div>'),
     ('Product Launch', '<div style="background-color: #f8f8f8;"><h1>New Release!</h1><p>Check out our latest product...</p><img src="product.jpg" /></div>'),
     ('Holiday Special', '<div class="festive"><h1>Season''s Greetings!</h1><p>Celebrate with our special offers...</p><div class="offers"></div></div>'),
