@@ -1,4 +1,3 @@
-
 # Email Campaign Service
 
 A modern standalone email campaign service written in Go.
@@ -47,7 +46,59 @@ To deploy this project locally run:
 #### There is no authentication required for this service, partly because it is designed to sit behind an api gateway and auth will therefor be performed at the gateway level.
 
 
-#### Get Email Groups
+#### Get Email Address
+
+```http
+  GET /api/v1/email-addresses/<id>
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`    | `string` | **Required**. Uuid of the email address to fetch |
+
+```json
+{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "email": "user@example.com",
+    "organization_id": "123e4567-e89b-12d3-a456-426614174000",
+    "created_at": "2025-01-01 12:00:00"
+}
+```
+
+#### Create Email Address
+
+```http
+  POST /api/v1/email-addresses/
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `email`| `string` | **Required**. Email address to create|
+
+```json
+{
+   "email": "user@example.com"
+}
+```
+
+#### Update Email Address
+
+```http
+  PUT /api/v1/email-addresses/<id>
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `id`      | `string` | **Required**. Uuid of the email address to update|
+| `email`   | `string` | **Required**. New email address|
+
+```json
+{
+   "email": "newuser@example.com"
+}
+```
+
+#### Get Email Group
 
 ```http
   GET /api/v1/email-groups/<id>
@@ -66,7 +117,7 @@ To deploy this project locally run:
 ```
 
 
-#### Create User Permission
+#### Create Email Group
 
 ```http
   POST /api/v1/email-groups/
@@ -106,7 +157,7 @@ To deploy this project locally run:
 ```
 
 
-#### Get Email Templates
+#### Get Email Template
 
 ```http
   GET /api/v1/email-templates/<id>
@@ -224,6 +275,7 @@ To deploy this project locally run:
    "email_templates": "my first email template"
 }
 ```
+
 
 ## Todo
 
