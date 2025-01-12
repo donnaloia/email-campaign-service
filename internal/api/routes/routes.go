@@ -31,6 +31,7 @@ func Setup(e *echo.Echo) {
 	profiles.GET("", handlers.Profiles.List)
 	profiles.GET("/:id", handlers.Profiles.Get)
 	profiles.POST("", handlers.Profiles.Create)
+	profiles.PATCH("/:id", handlers.Profiles.Update)
 
 	// Email Routes
 	emails := org.Group("/email-addresses")

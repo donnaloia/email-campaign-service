@@ -53,6 +53,10 @@ func (s *ProfileService) GetAll(organizationID string, params models.PaginationP
 			&profile.ID,
 			&profile.Username,
 			&profile.Email,
+			&profile.FirstName,
+			&profile.LastName,
+			&profile.Timezone,
+			&profile.Bio,
 			&profile.OrganizationID,
 			&profile.PictureURL,
 			&profile.CreatedAt,
@@ -68,7 +72,7 @@ func (s *ProfileService) GetAll(organizationID string, params models.PaginationP
 func (s *ProfileService) GetByID(organizationID string, id string) (*models.Profile, error) {
 	var profile models.Profile
 	err := s.db.QueryRow(
-		`SELECT id, username, email, organization_id, picture_url, created_at 
+		`SELECT id, username, email, first_name, last_name, timezone, bio, organization_id, picture_url, created_at 
 		FROM profiles 
 		WHERE id = $1 AND organization_id = $2`,
 		id, organizationID,
@@ -76,6 +80,10 @@ func (s *ProfileService) GetByID(organizationID string, id string) (*models.Prof
 		&profile.ID,
 		&profile.Username,
 		&profile.Email,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Timezone,
+		&profile.Bio,
 		&profile.OrganizationID,
 		&profile.PictureURL,
 		&profile.CreatedAt,
@@ -92,20 +100,67 @@ func (s *ProfileService) GetByID(organizationID string, id string) (*models.Prof
 func (s *ProfileService) Create(organizationID string, req *models.CreateProfile) (*models.Profile, error) {
 	var profile models.Profile
 	err := s.db.QueryRow(
-		`INSERT INTO profiles (id, username, email, organization_id, picture_url) 
-		VALUES ($1, $2, $3, $4, $5) 
-		RETURNING id, username, email, organization_id, picture_url, created_at`,
-		req.ID, req.Username, req.Email, organizationID, req.PictureURL,
+		`INSERT INTO profiles (id, username, email, first_name, last_name, timezone, bio, organization_id, picture_url) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+		RETURNING id, username, email, first_name, last_name, timezone, bio, organization_id, picture_url, created_at`,
+		req.ID, req.Username, req.Email, req.FirstName, req.LastName, req.Timezone, req.Bio, organizationID, req.PictureURL,
 	).Scan(
 		&profile.ID,
 		&profile.Username,
 		&profile.Email,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Timezone,
+		&profile.Bio,
 		&profile.OrganizationID,
 		&profile.PictureURL,
 		&profile.CreatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating profile: %w", err)
+	}
+	return &profile, nil
+}
+
+func (s *ProfileService) Update(organizationID string, id string, req *models.UpdateProfile) (*models.Profile, error) {
+	var profile models.Profile
+	err := s.db.QueryRow(
+		`UPDATE profiles 
+		SET username = $1, 
+			email = $2, 
+			first_name = $3, 
+			last_name = $4, 
+			timezone = $5, 
+			bio = $6, 
+			picture_url = $7
+		WHERE id = $8 AND organization_id = $9
+		RETURNING id, username, email, first_name, last_name, timezone, bio, organization_id, picture_url, created_at`,
+		req.Username,
+		req.Email,
+		req.FirstName,
+		req.LastName,
+		req.Timezone,
+		req.Bio,
+		req.PictureURL,
+		id,
+		organizationID,
+	).Scan(
+		&profile.ID,
+		&profile.Username,
+		&profile.Email,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Timezone,
+		&profile.Bio,
+		&profile.OrganizationID,
+		&profile.PictureURL,
+		&profile.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("profile not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error updating profile: %w", err)
 	}
 	return &profile, nil
 }

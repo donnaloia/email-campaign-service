@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    timezone VARCHAR(100),
+    bio VARCHAR(255),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     picture_url VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

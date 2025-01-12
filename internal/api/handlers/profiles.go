@@ -100,3 +100,32 @@ func (h *ProfileHandler) Create(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, profile)
 }
+
+// Update handles PUT requests to update a profile
+func (h *ProfileHandler) Update(c echo.Context) error {
+	// Get the organization ID from the URL
+	organizationID := c.Param("organization_id")
+	if organizationID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing organization ID")
+	}
+
+	// Get the profile ID from the URL
+	id := c.Param("id")
+	if id == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing ID")
+	}
+
+	// Bind the request body to the UpdateProfile struct
+	var req models.UpdateProfile
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	// Update the resource
+	profile, err := h.profileService.Update(organizationID, id, &req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, profile)
+}
