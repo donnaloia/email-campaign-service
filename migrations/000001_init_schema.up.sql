@@ -11,14 +11,14 @@ CREATE TABLE IF NOT EXISTS organizations (
 -- Profiles table
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY,
-    username VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    first_name VARCHAR(255),
-    last_name VARCHAR(255),
-    timezone VARCHAR(100),
-    bio VARCHAR(255),
+    username VARCHAR(255) NOT NULL CHECK (username <> ''),
+    email VARCHAR(255) NOT NULL CHECK (email <> ''),
+    first_name VARCHAR(255) CHECK (first_name IS NULL OR first_name <> ''),
+    last_name VARCHAR(255) CHECK (last_name IS NULL OR last_name <> ''),
+    timezone VARCHAR(100) CHECK (timezone IS NULL OR timezone <> ''),
+    bio VARCHAR(255) CHECK (bio IS NULL OR bio <> ''),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    picture_url VARCHAR(255),
+    picture_url VARCHAR(255) CHECK (picture_url IS NULL OR picture_url <> ''),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

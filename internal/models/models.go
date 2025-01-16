@@ -137,35 +137,35 @@ type Profile struct {
 	ID             string    `json:"id"`
 	Username       string    `json:"username"`
 	Email          string    `json:"email"`
-	FirstName      string    `json:"first_name"`
-	LastName       string    `json:"last_name"`
-	Timezone       string    `json:"timezone"`
-	Bio            string    `json:"bio"`
+	FirstName      *string   `json:"first_name"`
+	LastName       *string   `json:"last_name"`
+	Timezone       *string   `json:"timezone"`
+	Bio            *string   `json:"bio"`
 	OrganizationID string    `json:"organization_id"`
-	PictureURL     string    `json:"picture_url"`
+	PictureURL     *string   `json:"picture_url"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
 // Create a profile
 type CreateProfile struct {
-	ID             string `json:"id"`
-	Username       string `json:"username"`
-	Email          string `json:"email"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Timezone       string `json:"timezone"`
-	Bio            string `json:"bio"`
-	OrganizationID string `json:"organization_id"`
-	PictureURL     string `json:"picture_url"`
+	ID             string  `json:"id"`
+	Username       string  `json:"username"`
+	Email          string  `json:"email"`
+	FirstName      *string `json:"first_name"`
+	LastName       *string `json:"last_name"`
+	Timezone       *string `json:"timezone"`
+	Bio            *string `json:"bio"`
+	OrganizationID string  `json:"organization_id"`
+	PictureURL     *string `json:"picture_url"`
 }
 
 // Update a profile
 type UpdateProfile struct {
-	Username   string `json:"username"`
-	Email      string `json:"email"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Timezone   string `json:"timezone"`
-	Bio        string `json:"bio"`
-	PictureURL string `json:"picture_url"`
+	Username   string  `json:"username"`
+	Email      string  `json:"email"`
+	FirstName  *string `json:"first_name"`
+	LastName   *string `json:"last_name"`
+	Timezone   *string `json:"timezone"`
+	Bio        *string `json:"bio"`
+	PictureURL *string `json:"picture_url"`
 }
