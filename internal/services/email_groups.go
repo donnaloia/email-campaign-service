@@ -25,7 +25,7 @@ func (s *EmailGroupService) GetAll(organizationID string, params models.Paginati
 
 	// Get total count
 	var total int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM email_groups").Scan(&total)
+	err := s.db.QueryRow("SELECT COUNT(*) FROM email_groups WHERE organization_id = $1", organizationID).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("error counting email groups: %w", err)
 	}
